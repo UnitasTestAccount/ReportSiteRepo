@@ -1,0 +1,288 @@
+﻿Imports Microsoft.VisualBasic
+Imports ReportService
+Imports System
+Imports System.IO
+Imports System.Text
+Imports System.Web.Services
+Imports System.Web.Services.Protocols
+Imports GenerateReport
+
+Imports System.Collections.Generic
+Imports System.Linq
+Imports Microsoft.SqlServer.Management.Smo
+Imports Microsoft.SqlServer.Management.Smo.Agent
+
+
+Public Class ReportScheduler
+
+    Inherits System.Web.UI.Page
+
+
+    Private Sub CreateJob(ByVal args As String())
+        Dim server As Server = New Server(".")
+        Dim jobServer As JobServer = server.JobServer
+        Dim job As Microsoft.SqlServer.Management.Smo.Agent.Job = Nothing
+        Dim [step] As JobStep = Nothing
+        Dim schedule As JobSchedule = Nothing
+        schedule = New JobSchedule(jobServer, "Schedule_1")
+        schedule.FrequencyTypes = FrequencyTypes.OneTime
+        schedule.ActiveStartDate = DateTime.Today
+        schedule.ActiveStartTimeOfDay = New TimeSpan(DateTime.Now.Hour, (DateTime.Now.Minute + 2), 0)
+        schedule.Create()
+        job = New Microsoft.SqlServer.Management.Smo.Agent.Job(jobServer, "Job_1")
+        job.Create()
+        job.AddSharedSchedule(schedule.ID)
+        job.ApplyToTargetServer(server.Name)
+        [step] = New JobStep(job, "Step_1")
+        [step].Command = "SELECT 1"
+        [step].SubSystem = AgentSubSystem.TransactSql
+        [step].Create()
+    End Sub
+
+    Private Sub ReadJobs()
+
+        'Select [Command] FROM msdb.dbo.sysjobs job JOIN msdb.dbo.sysjobsteps steps ON job.job_id = steps.job_id WHERE [name] = 'YourJobName'
+
+
+    End Sub
+    
+
+    Protected Sub Page_Load(sender As Object, e As System.EventArgs) Handles Me.Load
+
+        'CreateSchedule()
+
+    End Sub
+
+
+    Private Sub CreateSchedule()
+        Dim conDB As String = ""
+        Dim sqlString As String = ""
+
+        conDB = Request.QueryString("db")
+        Dim rs As New ReportingService2010()
+        rs.Url = "http://waldorf" + _
+            "/ReportServer/ReportService2010.asmx"
+        rs.Credentials = New CustomReportCredentials("", "", "")
+
+        Dim report As String = "/ABAgriTrunk/emailVertical.rdl"
+
+        Dim desc As String = "Description"
+        Dim eventType As String = "TimedSubscription"
+        Dim scheduleXml As String = _
+            "<ScheduleDefinition>" + _
+            "   <StartDateTime>2017-11-29T10:00:00-00:00</StartDateTime>" + _
+            "   <WeeklyRecurrence>" + _
+            "      <WeeksInterval>1</WeeksInterval>" + _
+            "      <DaysOfWeek>" + _
+            "         <Wednesday>True</Wednesday>" + _
+            "      </DaysOfWeek>" + _
+            "   </WeeklyRecurrence>" + _
+            "</ScheduleDefinition>"
+
+        Dim extensionParams(6) As ParameterValue
+
+        extensionParams(0) = New ParameterValue()
+        extensionParams(0).Name = "RENDER_FORMAT"
+        extensionParams(0).Value = "EXCEL"
+
+        extensionParams(1) = New ParameterValue()
+        extensionParams(1).Name = "FILENAME"
+        extensionParams(1).Value = "Vertical Email"
+
+        extensionParams(2) = New ParameterValue()
+        extensionParams(2).Name = "FILEEXTN"
+        extensionParams(2).Value = "True"
+
+        extensionParams(3) = New ParameterValue()
+        extensionParams(3).Name = "PATH"
+        extensionParams(3).Value = "/ABAgriTrunk/emailVertical"
+
+        extensionParams(4) = New ParameterValue()
+        extensionParams(4).Name = "WRITEMODE"
+        extensionParams(4).Value = "Overwrite"
+
+        extensionParams(5) = New ParameterValue()
+        extensionParams(5).Name = "AUTOCOPY"
+        extensionParams(5).Value = "False"
+
+        Dim parameters(1) As ParameterValue
+
+        Dim parameter As New ParameterValue()
+        parameter.Name = "Farm_Code"
+        parameter.Value = "46682SCANM"
+        parameters(0) = parameter
+
+        parameter.Name = "Crop_Date"
+        parameter.Value = "11/25/2013"
+        parameters(1) = parameter
+
+        Dim matchData As String = scheduleXml
+        Dim extSettings As New ExtensionSettings()
+        extSettings.ParameterValues = extensionParams
+        extSettings.Extension = "Report Server Email"
+
+        Try
+            rs.CreateSubscription(report, extSettings, desc, eventType, matchData, parameters)
+
+        Catch e As Exception
+            'Console.WriteLine(e.Detail.InnerXml.ToString())
+        End Try
+
+        Try
+            rs.CreateSubscription(report, extSettings, desc, _
+                eventType, matchData, parameters)
+        Catch e As SoapException
+            Console.WriteLine(e.Detail.InnerXml.ToString())
+        End Try
+
+    End Sub
+
+
+    Public Sub Main()
+
+        Dim rs As New ReportingService2010()
+
+        rs.Credentials = System.Net.CredentialCache.DefaultCredentials
+
+        Dim report As String = "/ABAgriTrunk/emailVertical.rdl"
+        Dim desc As String = "***@microsoft.com"
+        Dim eventType As String = "TimedSubscription"
+        Dim scheduleXml As String = "<ScheduleDefinition><StartDateTime>2009-04-24T09:00:00-08:00</StartDateTime><WeeklyRecurrence><WeeksInterval>1</WeeksInterval><DaysOfWeek><Monday>True</Monday></DaysOfWeek></WeeklyRecurrence></ScheduleDefinition>"
+
+        Dim extensionParams(7) As ParameterValue
+
+        extensionParams(0) = New ParameterValue()
+        extensionParams(0).Name = "TO"
+        extensionParams(0).Value = "dmccombe@unitassoftware.com"
+
+        extensionParams(1) = New ParameterValue()
+        extensionParams(1).Name = "ReplyTo"
+        extensionParams(1).Value = "dmccombe@unitassoftware.com"
+
+        extensionParams(2) = New ParameterValue()
+        extensionParams(2).Name = "IncludeReport"
+        extensionParams(2).Value = "True"
+
+        extensionParams(3) = New ParameterValue()
+        extensionParams(3).Name = "RenderFormat"
+        extensionParams(3).Value = "XLS"
+
+        extensionParams(4) = New ParameterValue()
+        extensionParams(4).Name = "Subject"
+        extensionParams(4).Value = "@ReportName was executed at @ExecutionTime"
+
+        extensionParams(5) = New ParameterValue()
+        extensionParams(5).Name = "Comment"
+        extensionParams(5).Value = "Here is your report."
+
+        extensionParams(6) = New ParameterValue()
+        extensionParams(6).Name = "IncludeLink"
+        extensionParams(6).Value = "True"
+
+        extensionParams(7) = New ParameterValue()
+        extensionParams(7).Name = "Priority"
+        extensionParams(7).Value = "NORMAL"
+
+        Dim parameters(1) As ParameterValue
+
+        Dim parameter As New ParameterValue()
+        parameter.Name = "Farm_Code"
+        parameter.Value = "46682SCANM"
+        parameters(0) = parameter
+
+        parameter.Name = "Crop_Date"
+        parameter.Value = "11/25/2013"
+        parameters(1) = parameter
+
+        Dim matchData As String = scheduleXml
+        Dim extSettings As New ExtensionSettings()
+        extSettings.ParameterValues = extensionParams
+        extSettings.Extension = "Report Server Email"
+
+        Try
+            rs.CreateSubscription(report, extSettings, desc, eventType, matchData, parameters)
+
+        Catch e As Exception
+            'Console.WriteLine(e.Detail.InnerXml.ToString())
+        End Try
+    End Sub 'Main
+
+    'Public Sub Main2()
+
+    '    Dim rs As New ReportService.ReportingService2010
+    '    rs.Credentials = System.Net.CredentialCache.DefaultCredentials
+    '    ' Network credentials to reach and run the web service successfully
+    '    Dim report As String = "/KodyazReports/UserStatus"
+    '    ' Name and place of the report on the Report Server
+    '    ' which will be scheduled and attached to the email
+    '    Dim desc As String = "Sends eMail to Users"
+    '    Dim eventType As String = "TimedSubscription"
+
+    '    ' SUBSCRIPTION PARAMETER SETTINGS ---------------------
+    '    ' Parameters to create a subscription
+
+    '    Dim extensionParams(5) As ParameterValue
+
+    '    extensionParams(0) = New ParameterValue
+    '    extensionParams(0).Name = "TO"
+    '    extensionParams(0).Value = emailTo
+
+    '    extensionParams(1) = New ParameterValue
+    '    extensionParams(1).Name = "IncludeReport"
+    '    extensionParams(1).Value = "True"
+
+    '    extensionParams(2) = New ParameterValue
+    '    extensionParams(2).Name = "RenderFormat"
+    '    extensionParams(2).Value = "MHTML"
+    '    ' Web archive, if you want you can use other rendering formats like excel, pdf, etc.
+
+    '    extensionParams(3) = New ParameterValue
+    '    extensionParams(3).Name = "Subject"
+    '    extensionParams(3).Value = "User Status Information - " & System.DateTime.Now.ToShortDateString
+
+    '    extensionParams(4) = New ParameterValue
+    '    extensionParams(4).Name = "IncludeLink"
+    '    extensionParams(4).Value = "False"
+
+    '    extensionParams(5) = New ParameterValue
+    '    extensionParams(5).Name = "Priority"
+    '    extensionParams(5).Value = "NORMAL"
+
+    '    ' SUBSCRIPTION PARAMETER SETTINGS END -----------------
+
+    '    ' REPORT PARAMETER SETTINGS ---------------------
+    '    ' Parameters necessary for the report which will be attached to the email
+    '    ' These parameters varies from report to report
+
+    '    Dim parameters(1) As ParameterValue
+
+    '    Dim paramUserId As New ParameterValue
+    '    paramUserId.Name = "UserId"
+    '    paramUserId.Value = UserId
+    '    parameters(0) = paramUserId
+
+    '    Dim paramCultureCode As New ParameterValue
+    '    paramCultureCode.Name = "CultureCode"
+    '    paramCultureCode.Value = UserCultureCode ' like "en-us" or "tr-tr"
+    '    parameters(1) = paramCultureCode
+
+    '    ' REPORT PARAMETER SETTINGS END -----------------
+
+    '    Dim extSettings As New ExtensionSettings
+    '    extSettings.ParameterValues = extensionParams
+    '    extSettings.Extension = "Report Server User Status Email" '"Report Server Email"
+
+    '    Dim scheduleName As String = "ScheduleForUserStatusReport" & UserId.ToString
+    '    Dim scheduleUserEmail As New Schedule
+    '    Dim scheduleDefinition As New ScheduleDefinition
+    '    scheduleDefinition.StartDateTime = DateAdd(DateInterval.Minute, 10, DateTime.Now)
+    '    ' Defines the schedule to run 10 minutes later.
+    '    scheduleUserEmail.Definition = scheduleDefinition
+
+    '    Dim a As String = rs.CreateSchedule(scheduleName, ScheduleDefinition)
+    '    rs.SetScheduleProperties(scheduleName, a, scheduleDefinition)
+    '    Dim SubID = rs.CreateSubscription(report, extSettings, desc, eventType, a, parameters)
+
+    'End Sub
+
+End Class

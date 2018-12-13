@@ -1,0 +1,336 @@
+﻿var canvasData = {
+    status: "A",
+    houseSections: [],
+
+    //=====================================================
+    fieldValues: function (input, field) {
+        for (field in cS.fields) {
+            var fieldMaster = cS.fields[field];
+            var inputName = input.id.split("_");
+            if (inputName[0] == fieldMaster.Name) {
+                $(input).data("values", {
+                    min: fieldMaster.MinValue,
+                    max: fieldMaster.MaxValue,
+                    def: fieldMaster.DefaultValue,
+                    wid: fieldMaster.WidthPx,
+                    grp: fieldMaster.Group,
+                    adj: fieldMaster.AdjustBy
+                });
+            }
+        }
+
+        if ($(input).hasClass("checkbox") === false && $(input).hasClass("dropdown") === false) {
+            if ($(input).data("values").wid !== "" && $(input).data("values").wid !== null && $(input).data("values").wid !== 0) {
+                $(input).width($(input).data("values").wid);
+            }
+            if ($(input).val() === "" && $(input).data("values").def !== "" && !$(input).prop("disabled")) {
+                if ($(input).hasClass("dates")) {
+                    switch ($(input).data("values").def) {
+                        case "PlacementDate":
+                            var adjustedDate = utilities.dateAdd(poultryCommon.selectedCropDate(), "dd", $(input).data("values").adj);
+                            $(input).val(adjustedDate).trigger("change");
+                            break;
+                        case "ScheduleDate":
+                            $(input).val(cS.CurrentScheduleID).trigger("change");
+                            break;
+                        default:
+                            $(input).val($(input).data("values").def).trigger("change");
+                            break;
+                    }
+                } else {
+                    $(input).val($(input).data("values").def);
+                }
+            }
+        }
+        else {
+            if ($(input).val() === "" && $(input).data("values").def !== "" && !$(input).prop("disabled")) {
+                $(input).val($(input).data("values").def);
+            }
+        }
+    },
+
+    //=====================================================
+    whenValueChanges: function () {
+        var curentBatchNumber = typeof (cS.CurrentBatchNumber) === "undefined" ? 1 : Number(cS.CurrentBatchNumber);
+        $(".inputs").change(function () {
+            var changed = $(this);
+
+            if (!validateNewValue(changed)) { return false; }
+
+            assignNewValue(changed);
+
+            function validateNewValue(changed) {
+                var message = "";
+                if ($(changed).val() < $(changed).data("values").min && $(changed).data("values").min !== null) {
+                    message += " greater than or equal to " + $(changed).data("values").min;
+                }
+                if ($(changed).val() > $(changed).data("values").max && $(changed).data("values").max !== null) {
+                    message += " less than or equal to " + $(changed).data("values").max;
+                }
+
+                if (message === "") {
+                    if ($(changed).data("values").grp !== "" && $(changed).data("values").grp !== null) {
+                        var groupTotal = 0, groupMax = 0, groupNumber = $(changed).data("values").grp, groupName = "", groupLabel = "";
+                        for (grp in cS.fieldGroups) {
+                            if (groupNumber === cS.fieldGroups[grp].Id) {
+                                groupMax = cS.fieldGroups[grp].Total;
+                                groupName = cS.fieldGroups[grp].Name;
+                                groupLabel = cS.fieldGroups[grp].Label;
+                                continue;
+                            }
+                        }
+
+                        var houseColumn = "";
+                        if ($("#houseTable #" + $(changed).attr("id")).length > 0) {
+                            houseColumn = "[data-house='" + $(changed).data("house") + "'";
+                        }
+
+                        $.each($("." + groupName + houseColumn), function (i, item) {
+                            groupTotal += Number($(item).val());
+                        });
+
+                        if (groupTotal > groupMax) {
+                            message += " less than or equal to " + groupMax + " for " + groupLabel;
+                        }
+                    }
+                }
+
+                if (message !== "") {
+                    alert("Value must be" + message);
+                    $(changed).val("");
+                    return false;
+                }
+
+                return true;
+            }
+
+            function assignNewValue() {
+                for (var field in cS.fields) {
+                    var changedField = cS.fields[field];
+                    if (changedField.AppliesTo === "H" && cS.createdBy == "FARMS") {
+                        determineHouseValues(changedField, changed);
+                    }
+
+                    if (changedField.Name == $(changed).attr("id")) {
+
+                        for (field in changedField.CanvasFieldValues) {
+                            if (changedField.CanvasFieldValues[field].ScheduleID === $("#ScheduleID").val()) {
+                                if (changedField.FieldType == 6) {
+                                    changedField.CanvasFieldValues[field].FieldValue = $(changed).is(':checked') ? 1 : 0;
+                                } else {
+                                    changedField.CanvasFieldValues[field].FieldValue = $(changed).val();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            function determineHouseValues(changedField, changed) {
+                var fieldId = $(changed).attr("id").split("_");
+                for (var value in changedField.CanvasFieldValues) {
+                    if (changedField.CanvasFieldValues[value].BatchNumber !== curentBatchNumber || changedField.CanvasFieldValues[value].ScheduleID !== cS.CurrentScheduleID) { continue; }
+                    if (changedField.Name == fieldId[0] && changedField.CanvasFieldValues[value].HouseNumber == fieldId[1]) {
+                        if (changedField.Name.search(/Xdate/) != -1) {
+                            changedField.CanvasFieldValues[value].FieldValue = utilities.formatDate($(changed).attr("value"));
+                        }
+                        else {
+                            if (changedField.FieldType == 6) {
+                                changedField.CanvasFieldValues[value].FieldValue = $(changed).is(':checked') ? 1 : 0;
+                            }
+                            else {
+                                changedField.CanvasFieldValues[value].FieldValue = $(changed).val();
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        });
+    },
+
+    //=====================================================
+    storeData: function (farmer, farmGroup, farmName, isAutoSave) {
+        var fieldsAndQuestions = [];
+        $.each(cS.fields, function (i) {
+            fieldsAndQuestions.push(cS.fields[i]);
+        });
+
+
+        $(".inputError").removeClass("inputError");
+        if (!isAutoSave) {
+            if (canvasData.fieldDataError()) {
+                $("#canvasComplete").hide();
+                $("#canvasIncomplete").show();
+                canvasData.status = "A";
+            } else {
+                $("#canvasComplete").show();
+                $("#canvasIncomplete").hide();
+                canvasData.status = "C";
+            }
+        }
+
+
+        for (ii in cS.CanvasSummarySectionDetails) {
+            if (cS.CanvasSummarySectionDetails[ii].CDHid === cS.CDHid) {
+                cS.CanvasSummarySectionDetails[ii].CompleteStatus = canvasData.status;
+            }
+        }
+
+        var dataContainer = {
+            'canvasFields': canvasData.prepareData(),
+            'canvasID': $("#CanvasID").val(),
+            'farmCode': $("#FarmCode").val(),
+            'cropDate': utilities.formatDate($("#CropDate").val()),
+            'canvasStatus': canvasData.status,
+            'batchNumber': cS.CurrentBatchNumber,
+            'scheduleID': cS.CurrentScheduleID,
+            'domain': cS.createdBy
+        };
+
+        $.ajax({
+            url: "../canvas/CanvasDataWebService.asmx/StoreCanvasData",
+            data: "{ params: " + JSON.stringify(dataContainer) + "}",
+            success: function (result) {
+
+                cS.fields = fieldsAndQuestions;
+                if (canvasData.status == "C" && !isAutoSave) {
+                    utilities.displaySuccessfulSave();
+                    if (result.d.nextScheduledJob === null) {
+                        $("#TabContainer .selectedTab", window.parent.document).trigger("click");
+                    } else {
+                        cS.CurrentScheduleID = result.d.nextScheduledJob.ScheduleID;
+
+                        var existingRecord = false, existingNextRecord = false;
+                        for (ii in cS.CanvasSummarySectionDetails) {
+                            if (cS.CanvasSummarySectionDetails[ii].CDHid === result.d.recordId) {
+                                existingRecord = true;
+                            }
+                            if (cS.CanvasSummarySectionDetails[ii].ScheduleID === result.d.nextScheduledJob.ScheduleID) {
+                                existingNextRecord = true;
+                            }
+                        }
+
+                        if (existingRecord && !existingNextRecord) {
+                            canvasData.createNewData();
+                            $("#SummaryDropDown").trigger("change", "new");
+                        }
+
+                        if (existingRecord && existingNextRecord) {
+                            $("#SummaryDropDown").trigger("change", "new");
+                        }
+
+                        if (!existingRecord) {
+                            for (ii in cS.CanvasSummarySectionDetails) {
+                                if (cS.CanvasSummarySectionDetails[ii].CDHid === 0) {
+                                    updateRecordId(result.d.recordId);
+                                    canvasData.createNewData();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                else {
+                    if (!isAutoSave) {
+                        utilities.displaySuccessfulSave();
+                    }
+                    updateRecordId(result.d.recordId);
+                }
+            }
+        });
+
+        function updateRecordId(savedRecordId) {
+            if (cS.CDHid !== 0) { return }
+            $("#SummaryDropDown").find(":selected").attr('data-cdhId', savedRecordId);
+
+            for (ii in cS.CanvasSummarySectionDetails) {
+                if (cS.CanvasSummarySectionDetails[ii].CDHid === 0) {
+                    cS.CanvasSummarySectionDetails[ii].CDHid = savedRecordId;
+                }
+            }
+
+            for (var field in cS.fields) {
+                for (var value in cS.fields[field].CanvasFieldValues) {
+                    if (cS.fields[field].CanvasFieldValues[value].Id === 0) {
+                        cS.fields[field].CanvasFieldValues[value].Id = savedRecordId;
+                    }
+                }
+            }
+        }
+    },
+
+    //=====================================================
+    fieldDataError: function () {
+        var reqdFieldError = false;
+        if (utilities.validateFieldsX($(".validate"), true)) { reqdFieldError = true; }
+        return reqdFieldError;
+    },
+
+    //=====================================================
+    prepareData: function () {
+        var k = 0;
+        var field;
+        for (field = cS.fields.length; field--; ) {
+            if (cS.fields[field].Name.indexOf("nonDB") >= 0 || cS.fields[field].Name.indexOf("img") >= 0 || !canvas.isDataEntryField(cS.fields[field].FieldType)) {
+                cS.fields.splice(field, 1);
+                continue;
+            }
+
+            for (var value in cS.fields[field].CanvasFieldValues) {
+                cS.fields[field].CanvasFieldValues[value].SequenceNumber = k;
+                cS.fields[field].CanvasFieldValues[value].FieldValue = utilities.removeSpecialCharacters(cS.fields[field].CanvasFieldValues[value].FieldValue)
+                cS.fields[field].CanvasFieldValues[value].CropDate = utilities.formatDate($("#CropDate").val());
+                k++;
+            }
+        }
+
+        var fields = utilities.cloneObject(cS.fields);
+        for (field in fields) {
+            for (batch = fields[field].CanvasFieldValues.length - 1; batch >= 0; batch--) {
+                var record = fields[field].CanvasFieldValues[batch];
+                if (Number(record.BatchNumber) !== Number(cS.CurrentBatchNumber) || record.ScheduleID !== cS.CurrentScheduleID) {
+                    fields[field].CanvasFieldValues.splice(batch, 1);
+                }
+            }
+        }
+        return fields;
+    },
+
+    //=====================================================
+    createNewData: function () {
+        $("#New").hide();
+        var alreadyNewRecord = false;
+        for (ii in cS.CanvasSummarySectionDetails) {
+            if (cS.CanvasSummarySectionDetails[ii].CDHid === 0) {
+                cS.CanvasSummarySectionDetails[ii].Selected = true;
+                $("#SummaryDropDown").trigger("change", "new");
+                alreadyNewRecord = true;
+            }
+            cS.CanvasSummarySectionDetails[ii].Selected = false;
+        }
+        if (alreadyNewRecord) { return false; }
+
+        if (cS.MaxBatchNumber > 0) {
+            cS.MaxBatchNumber++;
+            cS.CurrentBatchNumber = cS.MaxBatchNumber;
+        } else {
+            cS.MaxBatchNumber = 1;
+            cS.CurrentBatchNumber = 1;
+        }
+        for (ii in cS.CanvasSummarySectionDetails) {
+            cS.CanvasSummarySectionDetails[ii].Selected = false;
+        }
+        var newSummaryRecord = {
+            "BatchNumber": cS.CurrentBatchNumber,
+            "ScheduleID": cS.CurrentScheduleID,
+            "ScheduleName": utilities.getMonthDateFormat(cS.CurrentScheduleID),
+            "CDHid": 0,
+            "CompleteStatus": "A",
+            "Selected": true
+        };
+        cS.CanvasSummarySectionDetails.push(newSummaryRecord);
+        $("#SummaryDropDown").trigger("change", "new");
+        cS.repopulateHouseNumbers();
+    }
+};

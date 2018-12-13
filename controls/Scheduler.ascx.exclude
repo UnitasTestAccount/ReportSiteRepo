@@ -1,0 +1,219 @@
+﻿<%@ Control Language="VB" ClassName="Scheduler" %>
+    <fieldset id="ScheduleProperties" style="display:none; margin-top:10px;" class="unitas_background" data-bind="stopBinding: true">
+        <input id="Hidden1" type="hidden" runat="server" class="title" value="<%$Translate : Scheduler %>" />
+        <legend style="margin-bottom:10px;"></legend>
+
+        <div id="ScheduleContainer" style="text-align:center;">
+
+            <div style="clear:both;" />
+
+            <button id="NewSchedule" type="button" style="display:none;" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only">
+                <asp:Label ID="Label2" runat="server" Text="<%$ Translate: New %>" CssClass="ui-button-text"/>
+            </button>
+
+            <div id="triggers" style="text-align:left;display:block;">
+
+                <div style="text-align:center; padding-bottom:25px;border-bottom:1px solid;">
+                    <div style="display:inline;width:170px;">
+                        <asp:Literal ID="Literal12" runat="server" Text="<%$ Translate: StartDate %>"/>
+                        <input tabindex = -1 type="text" id="StartDate" class="dates" data-bind="value: schedules.StartDate" style="margin-right:10px;"/>
+                        <asp:Literal ID="Literal16" runat="server" Text="<%$ Translate: EndDate %>"/>
+                        <input tabindex = -1 type="text" id="EndDate" class="dates" data-bind="value: schedules.EndDate" style="margin-right:20px;"/>
+                        <asp:Literal ID="Literal13" runat="server" Text="<%$ Translate: StartAge %>"/>
+                        <input tabindex = -1 type="text" class="numeric right age" id="StartAge" data-bind="value: schedules.StartAge" style="width:40px;margin-right:10px;" />
+                        <asp:Literal ID="Literal15" runat="server" Text="<%$ Translate: EndAge %>"/>
+                        <input tabindex = -1 type="text" class="numeric right age" id="EndAge" data-bind="value: schedules.EndAge" style="width:40px;margin-right:1px;" />
+                        <select id="MeasureAgeIn" tabindex = -1>
+                            <option value="Days" selected>
+                                <asp:Literal ID="Literal39" runat="server" Text="<%$ Translate: Days %>"/>
+                            </option>
+                            <option value="Weeks">
+                                <asp:Literal ID="Literal38" runat="server" Text="<%$ Translate: Weeks %>"/>
+                            </option>
+                        </select>
+                        <label for="AfterFirstKill"><asp:Literal ID="Literal6" runat="server" Text="<%$ Translate: AfterFirstKill %>"/></label>
+                        <input type="checkbox" id="AfterFirstKill" value="AfterFirstKill" data-bind="checked: schedules.AfterFirstKill" />
+                    </div>
+                </div>
+
+                <div>
+                    <ul style="width:150px; height:250px; border-right:1px solid; padding:20px 0px 0px 20px; display:inline-block; list-style:none;">
+                        <li style="margin-bottom:15px;"><input type="radio" name="frequency" id="None" value="None" data-bind="checked: schedules.Frequency" /><label for="None" style="padding-left:5px;" ><asp:Literal ID="Literal37" runat="server" Text="<%$ Translate: None %>"/></label></li>
+                        <li style="margin-bottom:15px;"><input type="radio" name="frequency" id="AsReqd" value="AsReqd" data-bind="checked: schedules.Frequency" /><label for="AsReqd" style="padding-left:5px;" ><asp:Literal ID="Literal17" runat="server" Text="<%$ Translate: AsRequired %>"/></label></li>
+                        <li style="margin-bottom:15px;"><input type="radio" name="frequency" id="Once" value="Once" data-bind="checked: schedules.Frequency" /><label for="Once" style="padding-left:5px;" ><asp:Literal ID="Literal1" runat="server" Text="<%$ Translate: Once %>"/></label></li>
+                        <li style="margin-bottom:15px;"><input type="radio" name="frequency" id="Daily" value="Daily" data-bind="checked: schedules.Frequency" /><label for="Daily" style="padding-left:5px;"><asp:Literal ID="Literal2" runat="server" Text="<%$ Translate: Daily %>"/></label></li>
+                        <li style="margin-bottom:15px;"><input type="radio" name="frequency" id="Weekly" value="Weekly" data-bind="checked: schedules.Frequency" /><label for="Weekly" style="padding-left:5px;"><asp:Literal ID="Literal3" runat="server" Text="<%$ Translate: Weekly %>"/></label></li>
+                        <li style="margin-bottom:15px;"><input type="radio" name="frequency" id="Monthly" value="Monthly" data-bind="checked: schedules.Frequency" /><label for="Monthly" style="padding-left:5px;"><asp:Literal ID="Literal4" runat="server" Text="<%$ Translate: Monthly %>"/></label></li>
+                        <li style="margin-bottom:15px;"><input type="radio" name="frequency" id="Age" value="Age" data-bind="checked: schedules.Frequency" /><label for="Age" style="padding-left:5px;"><asp:Literal ID="Literal5" runat="server" Text="<%$ Translate: Age %>"/></label></li>
+                        <li style="margin-bottom:15px;"><input type="radio" name="frequency" id="Dates" value="Dates" data-bind="checked: schedules.Frequency" /><label for="Dates" style="padding-left:5px;"><asp:Literal ID="Literal14" runat="server" Text="<%$ Translate: Dates %>"/></label></li>
+                    </ul>
+
+                    <div style="display:inline-block; vertical-align:top; padding:10px 0px 10px 10px;">
+                        <span id="RecurD" style="display:none;" data-bind="visible: ShowRelated('Daily')">
+                            <asp:Literal ID="Literal7" runat="server" Text="<%$ Translate: RecurEvery %>"/>
+                            <input type="text" id="RecurDaily" class="smallField" data-bind="value: schedules.DailyRecurrence" />
+                            <asp:Literal ID="Literal8" runat="server" Text=" <%$ Translate: days %>" />
+                        </span>
+
+                        <span id="RecurW" style="display:none;" data-bind="visible: ShowRelated('Weekly')">
+                            <asp:Literal ID="Literal9" runat="server" Text="<%$ Translate: RecurEvery %> "/>
+                            <input type="text" id="RecurWeekly" class="smallField" data-bind="value: schedules.WeeklyRecurrence" />
+                            <asp:Literal ID="Literal10" runat="server" Text=" <%$ Translate: WeeksOn %>"/>
+                        </span>
+
+                        <div id="frequencyWeekly" style="display:none;width:150px;" data-bind="visible: ShowRelated('Weekly')">
+                            <%--<ul style="list-style:none; padding-top:10px;" data-bind="foreach: Days">--%>
+                            <ul style="list-style:none; padding-top:10px;">
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="Monday" value="Monday" data-bind="checked: $root.schedules.DaysSelected" /><label style="padding-left:5px;" for="Monday"><asp:Literal ID="Literal18" runat="server" Text=" <%$ Translate: Monday %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="Tuesday" value="Tuesday" data-bind="checked: $root.schedules.DaysSelected" /><label id="Label1" style="padding-left:5px;" for="Tuesday"><asp:Literal ID="Literal19" runat="server" Text=" <%$ Translate: Tuesday %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="Wednesday" value="Wednesday" data-bind="checked: $root.schedules.DaysSelected" /><label id="Label5" style="padding-left:5px;" for="Wednesday"><asp:Literal ID="Literal20" runat="server" Text=" <%$ Translate: Wednesday %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="Thursday" value="Thursday" data-bind="checked: $root.schedules.DaysSelected" /><label id="Label6" style="padding-left:5px;" for="Thursday"><asp:Literal ID="Literal21" runat="server" Text=" <%$ Translate: Thursday %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="Friday" value="Friday" data-bind="checked: $root.schedules.DaysSelected" /><label id="Label7" style="padding-left:5px;" for="Friday"><asp:Literal ID="Literal22" runat="server" Text=" <%$ Translate: Friday %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="Saturday" value="Saturday" data-bind="checked: $root.schedules.DaysSelected" /><label id="Label8" style="padding-left:5px;" for="Saturday"><asp:Literal ID="Literal23" runat="server" Text=" <%$ Translate: Saturday %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="Sunday" value="Sunday" data-bind="checked: $root.schedules.DaysSelected" /><label id="Label9" style="padding-left:5px;" for="Sunday"><asp:Literal ID="Literal24" runat="server" Text=" <%$ Translate: Sunday %>" /></label>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div id="frequencyMonthly" style="display:none; width:650px;" data-bind="visible: ShowRelated('Monthly')">
+                            <ul style="list-style:none; padding:0px; display:inline-block; width:280px;" class="months">
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="January" value=1 data-bind="checked: $root.schedules.MonthsSelected" /><label style="padding-left:5px;" for="January"><asp:Literal ID="Literal25" runat="server" Text=" <%$ Translate: January %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="February" value=2 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label10" style="padding-left:5px;" for="February"><asp:Literal ID="Literal26" runat="server" Text=" <%$ Translate: February %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="March" value=3 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label11" style="padding-left:5px;" for="March"><asp:Literal ID="Literal27" runat="server" Text=" <%$ Translate: March %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="April" value=4 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label12" style="padding-left:5px;" for="April"><asp:Literal ID="Literal28" runat="server" Text=" <%$ Translate: April %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="May" value=5 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label13" style="padding-left:5px;" for="May"><asp:Literal ID="Literal29" runat="server" Text=" <%$ Translate: May %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="June" value=6 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label14" style="padding-left:5px;" for="June"><asp:Literal ID="Literal30" runat="server" Text=" <%$ Translate: June %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="July" value=7 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label15" style="padding-left:5px;" for="July"><asp:Literal ID="Literal31" runat="server" Text=" <%$ Translate: July %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="August" value=8 data-bind="checked: $root.schedules.MonthsSelected" /><label style="padding-left:5px;" for="August"><asp:Literal ID="Literal32" runat="server" Text=" <%$ Translate: August %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="September" value=9 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label16" style="padding-left:5px;" for="September"><asp:Literal ID="Literal33" runat="server" Text=" <%$ Translate: September %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="October" value=10 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label17" style="padding-left:5px;" for="October"><asp:Literal ID="Literal34" runat="server" Text=" <%$ Translate: October %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="November" value=11 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label18" style="padding-left:5px;" for="November"><asp:Literal ID="Literal35" runat="server" Text=" <%$ Translate: November %>" /></label>
+                                </li>
+                                <li style="margin-bottom:5px;">
+                                    <input type="checkbox" id="December" value=12 data-bind="checked: $root.schedules.MonthsSelected" /><label id="Label19" style="padding-left:5px;" for="December"><asp:Literal ID="Literal36" runat="server" Text=" <%$ Translate: December %>" /></label>
+                                </li>
+                            </ul>
+                            <select style="height:150px; vertical-align:top; margin:0px 10px 0px 20px; display:none;" class="multiSelect" id="DatesSelection" multiple="multiple" data-bind="options: allDatesInMonth, selectedOptions: $root.schedules.DatesInMonthSelected">
+                            </select>
+
+                            <fieldset style="width:250px; display:inline; vertical-align:top; border:none;">
+                                <legend></legend>
+                                <ul style="list-style:none; vertical-align:top; padding-left:10px; display:inline-block; width:90px;" class="PlaceSelection">
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="First" value=1 data-bind="checked: $root.schedules.MonthWeekOrdinals" /><label style="padding-left:5px;" for="First"><asp:Literal ID="Literal51" runat="server" Text=" <%$ Translate: First %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="Second" value=2 data-bind="checked: $root.schedules.MonthWeekOrdinals" /><label id="Label20" style="padding-left:5px;" for="Second"><asp:Literal ID="Literal52" runat="server" Text=" <%$ Translate: Second %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="Third" value=3 data-bind="checked: $root.schedules.MonthWeekOrdinals" /><label id="Label21" style="padding-left:5px;" for="Third"><asp:Literal ID="Literal53" runat="server" Text=" <%$ Translate: Third %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="Fourth" value=4 data-bind="checked: $root.schedules.MonthWeekOrdinals" /><label id="Label22" style="padding-left:5px;" for="Fourth"><asp:Literal ID="Literal54" runat="server" Text=" <%$ Translate: Fourth %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="Last" value=-1 data-bind="checked: $root.schedules.MonthWeekOrdinals" /><label id="Label23" style="padding-left:5px;" for="Last"><asp:Literal ID="Literal55" runat="server" Text=" <%$ Translate: Last %>" /></label>
+                                    </li>
+                                </ul>
+
+                                <ul style="list-style:none; vertical-align:top; padding-left:10px; display:inline-block; width:100px;" class="DaySelection">
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="MonthSunday" value=0 data-bind="checked: $root.schedules.MonthDays" /><label style="padding-left:5px;" for="MonthSunday"><asp:Literal ID="Literal56" runat="server" Text=" <%$ Translate: Sunday %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="MonthMonday" value=1 data-bind="checked: $root.schedules.MonthDays" /><label id="Label24" style="padding-left:5px;" for="MonthMonday"><asp:Literal ID="Literal57" runat="server" Text=" <%$ Translate: Monday %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="MonthTuesday" value=2 data-bind="checked: $root.schedules.MonthDays" /><label id="Label25" style="padding-left:5px;" for="MonthTuesday"><asp:Literal ID="Literal58" runat="server" Text=" <%$ Translate: Tuesday %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="MonthWednesday" value=3 data-bind="checked: $root.schedules.MonthDays" /><label id="Label26" style="padding-left:5px;" for="MonthWednesday"><asp:Literal ID="Literal59" runat="server" Text=" <%$ Translate: Wednesday %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="MonthThursday" value=4 data-bind="checked: $root.schedules.MonthDays" /><label id="Label27" style="padding-left:5px;" for="MonthThursday"><asp:Literal ID="Literal60" runat="server" Text=" <%$ Translate: Thursday %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="MonthFriday" value=5 data-bind="checked: $root.schedules.MonthDays" /><label id="Label28" style="padding-left:5px;" for="MonthFriday"><asp:Literal ID="Literal61" runat="server" Text=" <%$ Translate: Friday %>" /></label>
+                                    </li>
+                                    <li style="margin-bottom:5px;">
+                                        <input type="checkbox" id="MonthSaturday" value=6 data-bind="checked: $root.schedules.MonthDays" /><label id="Label29" style="padding-left:5px;" for="MonthSaturday"><asp:Literal ID="Literal62" runat="server" Text=" <%$ Translate: Saturday %>" /></label>
+                                    </li>
+                                </ul>
+                            </fieldset>
+                        </div>
+
+                        <div id="frequencyAge" style="display:none;" data-bind="visible: ShowRelated('Age')">
+                            <span style="vertical-align:top;"><asp:Literal ID="Literal11" runat="server" Text="<%$ Translate: Days %> "/></span>
+                            <select style="width:50px; height:200px;" class="multiSelect" id="AgeSelection" data-bind="options: allAges, selectedOptions: $root.schedules.AgesSelected" multiple="multiple">
+                            </select>
+                        </div>
+
+                        <div id="frequencyDates" style="display:none;text-align:center;" data-bind="visible: ShowRelated('Dates')">
+                            <table id="DateSchedules" class="dataEntry recordSelector" style="display:inline-block;margin-bottom:10px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width:80px;">
+                                            <asp:Label ID="Label3" runat="server" Text='<%$ Translate: Date %>' />
+                                        </th>
+                                        <%--<th><asp:Label ID="Label4" runat="server" Text='<%$ Translate: CompleteBy %>' /></th>--%>
+                                        <th>
+                                            <img alt="" src="../images/add16x16.png" id="Img1" data-bind="click: AddDate" class="clickable"/>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scheduledDates" data-bind="foreach: $root.schedules.DatesSelected">
+                                    <tr>
+                                        <td>
+                                            <input type="text" data-bind="value: date" class="dates scheduledDate"/>
+                                        </td>
+                                        <%--
+                                        <td class="smallfieldcell">
+                                            <input type="text" data-bind="value: CompleteBy" class="numeric completeBy"/>
+                                        </td>--%>
+                                        <td>
+                                            <img alt="" src="../images/delete.png" id="Delete" data-bind="click: $root.RemoveDate" class="deleteThis clickable"/>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
